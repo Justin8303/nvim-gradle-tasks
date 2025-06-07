@@ -287,7 +287,7 @@ vim.api.nvim_create_autocmd({ "VimEnter", "DirChanged" }, {
       find_gradle_file_upwards_async(start_dir, function(found_dir)
         if found_dir and found_dir ~= last_gradle_root then
           last_gradle_root = found_dir
-          require("nvim-gradle.tasks.gradle_tasks").load_tasks_async()
+          M.load_tasks_async()
         end
       end)
     end, 3000)
