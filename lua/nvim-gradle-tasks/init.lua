@@ -10,6 +10,37 @@ local function has_gradle()
   return vim.fn.executable("gradle") == 1
 end
 
+-- async recursive search for build.gradle or build.gradle.kts upwards
+local function find_gradle_file_upwards_async(start_dir, callback)
+  local function scan_dir(dir)
+    vim.loop.fs_scandir(dir, function(err, handle)
+      if err or not handle then
+        callback(nil)
+        return
+      end
+      while true do
+        local name = vim.loop.fs_scandir_next(handle)
+        if not name then break end
+        if name == "build.gradle" or name == "build.gradle.kts" then
+          -- found!
+          callback(dir)
+          return
+        end
+      end
+      -- Not found, check parent dir
+      local parent = vim.fn.fnamemodify(dir, ":h")
+      if parent == dir or parent == "" or parent == "/" or parent:match("^%a:[/\\]?$") then
+        -- reached top
+        callback(nil)
+      else
+        -- recurse parent
+        scan_dir(parent)
+      end
+    end)
+  end
+  scan_dir(start_dir)
+end
+
 -- Asynchronous task loading using vim.system or vim.loop
 function M.load_tasks_async(callback)
   if loading then return end
@@ -248,34 +279,16 @@ vim.api.nvim_create_user_command(
   { nargs = 0 }
 )
 
-local function find_gradle_file_async(callback)
-  local cwd = vim.loop.cwd()
-  vim.loop.fs_scandir(cwd, function(err, handle)
-    if err or not handle then
-      callback(false)
-      return
-    end
-    while true do
-      local name = vim.loop.fs_scandir_next(handle)
-      if not name then break end
-      if name:match("^build%.gradle$") or name:match("^build%.gradle%.kts$") then
-	callback(true)
-	return
-      end
-    end
-    callback(false)
-  end)
-end
-
 vim.api.nvim_create_autocmd({ "VimEnter", "DirChanged" }, {
   callback = function()
+    local start_dir = vim.loop.cwd()
     vim.defer_fn(function()
-      find_gradle_file_async(function(found)
-	if found then
-	  M.load_tasks_async()
-	end
+      find_gradle_file_upwards_async(start_dir, function(found_dir)
+        if found_dir then
+          require("nvim-gradle.tasks.gradle_tasks").load_tasks_async()
+        end
       end)
-    end, 3000)  -- 3000ms = 3 Sekunden
+    end, 3000)
   end,
 })
 
