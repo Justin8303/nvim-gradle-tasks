@@ -272,7 +272,7 @@ vim.api.nvim_create_autocmd({ "VimEnter", "DirChanged" }, {
     vim.defer_fn(function()
       find_gradle_file_async(function(found)
 	if found then
-	  require("gradle_tasks").load_tasks_async()
+	  require("nvim-gradle-tasks.gradle_parser").load_tasks_async()
 	end
       end)
     end, 3000)  -- 3000ms = 3 Sekunden
