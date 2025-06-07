@@ -1,5 +1,5 @@
 -- gradle_tasks.lua
-local parser = require("gradle_parser")
+local parser = require("nvim-gradle-tasks.gradle_parser")
 
 local M = {}
 local gradle_tasks, gradle_task_descriptions, gradle_task_groups, gradle_task_group_order = {}, {}, {}, {}
