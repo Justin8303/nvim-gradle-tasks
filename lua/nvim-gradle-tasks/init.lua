@@ -16,26 +16,26 @@ local function find_gradle_file_upwards_async(start_dir, callback)
   local function scan_dir(dir)
     vim.loop.fs_scandir(dir, function(err, handle)
       if err or not handle then
-        callback(nil)
-        return
+	callback(nil)
+	return
       end
       while true do
-        local name = vim.loop.fs_scandir_next(handle)
-        if not name then break end
-        if name == "build.gradle" or name == "build.gradle.kts" then
-          -- found!
-          callback(dir)
-          return
-        end
+	local name = vim.loop.fs_scandir_next(handle)
+	if not name then break end
+	if name == "build.gradle" or name == "build.gradle.kts" then
+	  -- found!
+	  callback(dir)
+	  return
+	end
       end
       -- Not found, check parent dir
       local parent = vim.fn.fnamemodify(dir, ":h")
       if parent == dir or parent == "" or parent == "/" or parent:match("^%a:[/\\]?$") then
-        -- reached top
-        callback(nil)
+	-- reached top
+	callback(nil)
       else
-        -- recurse parent
-        scan_dir(parent)
+	-- recurse parent
+	scan_dir(parent)
       end
     end)
   end
@@ -142,6 +142,18 @@ function M.run_task(task)
     local output = {}
     local erroutput = {}
     local handle
+
+    -- Start gradle task in directory where build.gradle is located instead of current working directory
+    local gradle_root = last_gradle_root or vim.loop.cwd()
+    if not last_gradle_root then
+      vim.notify("No Gradle root found, using current directory.", vim.log.levels.WARN)
+      gradle_root = vim.loop.cwd()
+    end
+
+    local current_dir = vim.loop.cwd()
+    vim.loop.chdir(gradle_root)
+    -- Spawn gradle process
+
     handle = vim.loop.spawn("gradle", {
       args = { task },
       stdio = {nil, stdout, stderr},
@@ -159,6 +171,10 @@ function M.run_task(task)
 	vim.api.nvim_echo({{last, ""}}, false, {})
       end)
     end)
+
+    -- Move back to original directory
+    vim.loop.chdir(current_dir)
+
     stdout:read_start(function(err, data)
       assert(not err, err)
       if data then
@@ -285,10 +301,10 @@ vim.api.nvim_create_autocmd({ "VimEnter", "DirChanged" }, {
     local start_dir = vim.loop.cwd()
     vim.defer_fn(function()
       find_gradle_file_upwards_async(start_dir, function(found_dir)
-        if found_dir and found_dir ~= last_gradle_root then
-          last_gradle_root = found_dir
-          M.load_tasks_async()
-        end
+	if found_dir and found_dir ~= last_gradle_root then
+	  last_gradle_root = found_dir
+	  M.load_tasks_async()
+	end
       end)
     end, 3000)
   end,
