@@ -144,8 +144,8 @@ function M.run_task(task)
     local handle
 
     -- Start gradle task in directory where build.gradle is located instead of current working directory
-    local gradle_root = last_gradle_root or vim.loop.cwd()
-    if not last_gradle_root then
+    local gradle_root = last_gradle_root
+    if not gradle_root then
       vim.notify("No Gradle root found, using current directory.", vim.log.levels.WARN)
       gradle_root = vim.loop.cwd()
     end
