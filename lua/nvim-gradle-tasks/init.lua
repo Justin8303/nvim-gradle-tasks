@@ -152,10 +152,10 @@ function M.run_task(task)
     end
 
     local current_dir = vim.loop.cwd()
-    vim.loop.chdir(gradle_root)
+    --vim.loop.chdir(gradle_root)
     -- Spawn gradle process
 
-    handle = vim.loop.spawn("gradle", {
+    handle = vim.loop.spawn("cd " .. gradle_root .. " && gradle", {
       args = { task },
       stdio = {nil, stdout, stderr},
     },
