@@ -119,6 +119,16 @@ function M.run_task(task)
   vim.notify("Running gradle " .. task .. " ...")
   M.last_output = {}
   if vim.system then
+    -- Start gradle task in directory where build.gradle is located instead of current working directory
+    local gradle_root = current_gradle_root
+    if not gradle_root then
+      vim.notify("No Gradle root found, using current directory.", vim.log.levels.WARN)
+      gradle_root = vim.loop.cwd()
+    end
+
+    local current_dir = vim.loop.cwd()
+    vim.loop.chdir(gradle_root)
+
     vim.system({"gradle", task}, {text = true}, function(obj)
       local lines = {}
       if obj.stdout then
@@ -137,6 +147,9 @@ function M.run_task(task)
 	vim.api.nvim_echo({{last, ""}}, false, {})
       end)
     end)
+
+    -- Move back to original directory
+    vim.loop.chdir(current_dir)
   else
     local stdout = vim.loop.new_pipe(false)
     local stderr = vim.loop.new_pipe(false)
@@ -152,10 +165,10 @@ function M.run_task(task)
     end
 
     local current_dir = vim.loop.cwd()
-    --vim.loop.chdir(gradle_root)
-    -- Spawn gradle process
+    vim.loop.chdir(gradle_root)
 
-    handle = vim.loop.spawn("cd " .. gradle_root .. " && gradle", {
+    -- Spawn gradle process
+    handle = vim.loop.spawn("gradle", {
       args = { task },
       stdio = {nil, stdout, stderr},
     },
