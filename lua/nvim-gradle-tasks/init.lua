@@ -297,6 +297,18 @@ vim.api.nvim_create_user_command(
   { nargs = 0 }
 )
 
+vim.api.nvim_create_user_command(
+  "GradleShowRootPath",
+  function ()
+    if current_gradle_root then
+      vim.notify("Current Gradle root: " .. current_gradle_root, vim.log.levels.INFO)
+    else
+      vim.notify("No Gradle root found.", vim.log.levels.WARN)
+    end
+  end,
+  { nargs = 0 }
+)
+
 vim.api.nvim_create_autocmd({ "VimEnter", "DirChanged" }, {
   callback = function()
     local start_dir = vim.loop.cwd()
