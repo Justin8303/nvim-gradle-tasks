@@ -3,6 +3,7 @@ local parser = require("nvim-gradle-tasks.gradle_parser")
 
 local M = {}
 local gradle_tasks, gradle_task_descriptions, gradle_task_groups, gradle_task_group_order = {}, {}, {}, {}
+local current_gradle_root = nil
 local last_gradle_root = nil
 local loading = false
 M.last_output = {}
@@ -144,7 +145,7 @@ function M.run_task(task)
     local handle
 
     -- Start gradle task in directory where build.gradle is located instead of current working directory
-    local gradle_root = last_gradle_root
+    local gradle_root = current_gradle_root
     if not gradle_root then
       vim.notify("No Gradle root found, using current directory.", vim.log.levels.WARN)
       gradle_root = vim.loop.cwd()
@@ -304,7 +305,8 @@ vim.api.nvim_create_autocmd({ "VimEnter", "DirChanged" }, {
 	if found_dir and found_dir ~= last_gradle_root then
 	  -- convert relative path to absolute
 	  absolute_dir = vim.fn.fnamemodify(found_dir, ":p")
-	  last_gradle_root = absolute_dir
+	  last_gradle_root = found_dir
+	  current_gradle_root = absolute_dir
 	  M.load_tasks_async()
 	end
       end)
