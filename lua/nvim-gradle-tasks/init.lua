@@ -302,7 +302,9 @@ vim.api.nvim_create_autocmd({ "VimEnter", "DirChanged" }, {
     vim.defer_fn(function()
       find_gradle_file_upwards_async(start_dir, function(found_dir)
 	if found_dir and found_dir ~= last_gradle_root then
-	  last_gradle_root = found_dir
+	  -- convert relative path to absolute
+	  absolute_dir = vim.fn.fnamemodify(found_dir, ":p")
+	  last_gradle_root = absolute_dir
 	  M.load_tasks_async()
 	end
       end)
